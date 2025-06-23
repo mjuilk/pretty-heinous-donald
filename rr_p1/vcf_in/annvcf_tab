@@ -1,0 +1,31 @@
+#! /bin/bash
+
+ ###########################################
+#         WORKS FOR ANNOTATED VCF'S         #
+# simple script performing following steps  #
+# 1. QC (looser than diagnostic)            #
+# 2. Get known pathogenic vars with ClinVar #
+# 3. query chrom, pos, id, ref, alt, rsid   #
+# 4. filter for cancer genes based on list  #
+# 5. add header to filtered variants table  #
+ ###########################################
+
+set -e
+
+ml BCFtools
+ml Java/21
+
+bcftools filter -i 'FORMAT/DP>=10 && FORMAT/GQ>=10' $1 -o lq.vcf
+
+gzip lq.vcf
+
+java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annmem    -dbfile ~/ext/snpEff/clinvar_20250521.vcf.gz \
+    -fields CLNSIG       lq.vcf.gz    | grep "CLNSIG=Pa" > clvp.ann.vcf
+
+bcftools view -h lq.vcf.gz | cat - clvp.ann.vcf > temp && mv temp clvp.ann.vcf
+
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%INFO/CSQ]\n' clvp.ann.vcf | awk -F'\t' '{split($5, csq, "|"); print $1, $2, $3, $4, csq[4], csq[2], csq[18]}' OFS='\t' > variants.tsv
+
+awk 'NR==FNR {genes[$1];next} $5 in genes' ~/scripts/vcf_in/cangenLG.txt variants.tsv > cancer_vars.tsv
+
+echo -e "CHROM\tPOS\tREF\tALT\tGENE\tCONSEQUENCE\tRSID" | cat - cancer_vars.tsv > temp && mv temp cancer_vars.tsv

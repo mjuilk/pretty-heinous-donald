@@ -1,0 +1,46 @@
+#! /bin/bash
+
+ ###########################################
+#         COMPARES VARIANT TSV's            #
+# simple script for comparing variants      #
+# from different callers                    #
+# 1. declare output file variables          #
+# 2. loop folders through folders           #
+# 3. check if single or merged for sarek    #
+# 4. grep both ways and output and print    #
+ ###########################################
+
+# Default output filename (A for sarek-sen; B for sen-sarek)
+OUT_A="com_sase.tsv"
+OUT_B="com_sesa.tsv"
+
+# Check if at least 1 folder is provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 folder1 [folder2 ...]"
+    echo "Compares sarek/sentieon results (bothways) and outs it into $OUT_A and $OUT_B"
+    exit 1
+fi
+
+# Loop through samples and do comparison
+for folder in "$@"; do
+    PATH_SA="$folder/sarek/variants.tsv"
+    PATH_SE="$folder/sen/variants.tsv"
+    if [ -f "$PATH_SA" ]; then
+        echo "This is a single run : $folder"
+    else
+        PATH_SA="$folder/sarek/patvar_m.tsv"
+        echo "These are merged runs : $folder"
+    fi
+    if [ -f "$PATH_SE" ]; then
+        echo "Found $PATH_SE exists in $folder"
+    else
+        echo "Warning: $PATH_SE not found in $folder" >&2
+    fi
+    grep -Fxvf $PATH_SA $PATH_SE | sort -V > $folder/$OUT_A
+    grep -Fxvf $PATH_SE $PATH_SA | sort -V > $folder/$OUT_B
+    CNT_VAR_SASE=$(wc -l "$folder/$OUT_A"| awk '{print $1}')
+    CNT_VAR_SESA=$(wc -l "$folder/$OUT_B"| awk '{print $1}')
+    echo "$CNT_VAR_SASE variant(s) found in Sentieon output, but not Sarek output."
+    echo "$CNT_VAR_SESA variant(s) found in Sarek output, but not Sentieon output."
+    echo "---"
+done

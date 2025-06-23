@@ -1,0 +1,64 @@
+#! /bin/bash
+
+ ###########################################
+#         MERGES VARIANT TSV's              #
+# simple script for merging variant tables  #
+# from multiple sequencing runs             #
+# 1. checks if cancer/variant files exist   #
+# 2. initialises arrays for can/patho var   #
+# 3. loops through folders and adds to arrs #
+# 4. sort command for canpat and patvar     #
+ ###########################################
+
+# Default output filename
+OUT_CAN="canpat_m.tsv"
+OUT_PAT="patvar_m.tsv"
+
+# The filename we expect to find in each folder (change this as needed)
+IN_CAN="cancer_vars.tsv"
+IN_PAT="variants.tsv"
+
+# Check if at least 1 folder is provided
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 folder1 [folder2 ...]"
+    echo "Merges $IN_CAN and $IN_PAT from each folder into $OUT_CAN and $OUT_PAT"
+    exit 1
+fi
+
+# Array to collect all input files
+FI_CAN=()
+FI_PAT=()
+
+# Check each folder for the target file
+for folder in "$@"; do
+    PATH_CAN="$folder/$IN_CAN"
+    if [ -f "$PATH_CAN" ]; then
+        FI_CAN+=("$PATH_CAN")
+        echo "Found $IN_CAN in $folder"
+    else
+        echo "Warning: $IN_CAN not found in $folder" >&2
+    fi
+    PATH_PAT="$folder/$IN_PAT"
+    if [ -f "$PATH_PAT" ]; then
+        FI_PAT+=("$PATH_PAT")
+        echo "Found $IN_PAT in $folder"
+    else
+        echo "Warning: $IN_PAT not found in $folder" >&2
+    fi
+done
+
+# Check if we found any files to merge
+if [ ${#FI_PAT[@]} -eq 0 ]; then
+    echo "Error: No $IN_PAT files found in any provided folders" >&2
+    exit 1
+fi
+
+# Execute the sort command
+echo "Merging ${#FI_CAN[@]} files into $OUT_CAN..."
+sort -uV "${FI_CAN[@]}" > "$OUT_CAN"
+echo "Done. Results saved to $OUT_CAN"
+
+
+echo "Merging ${#FI_PAT[@]} files into $OUT_PAT..."
+sort -uV "${FI_PAT[@]}" > "$OUT_PAT"
+echo "Done. Results saved to $OUT_PAT"
