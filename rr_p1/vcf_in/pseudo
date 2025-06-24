@@ -1,0 +1,15 @@
+###############################
+# script for pseudonymisation #
+# of vcf files using reheader #
+# arg1 : input vcf file       #
+# arg2 : hash table           #
+###############################
+
+#!/bin/bash
+
+bname="${1%.vcf.gz}"
+zcat "$1" | sed '/##SentieonCommandLine/d' | bgzip > "${bname}_PS.vcf.gz"
+bcftools reheader -s "$2" -o "${bname}_PSR.vcf.gz" "${bname}_PS.vcf.gz" 
+rm "${bname}_PS.vcf.gz"
+mv "${bname}_PSR.vcf.gz" "${bname}_PS.vcf.gz"
+bcftools view "${bname}_PS.vcf.gz" | grep "P2"
