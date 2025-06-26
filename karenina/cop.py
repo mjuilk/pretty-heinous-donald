@@ -15,6 +15,7 @@ import pandas as pd
 import requests
 import time
 import networkx as nx
+import numpy as np
 
 # Initialise graph
 
@@ -149,12 +150,15 @@ for gene, partners in ppi_dict.items():
         else:
             G.add_edge(gene, partner, score=score)
 
-
-def is_cop_win_graph(G):
-    # A graph is Cop-Win iff it is dismantlable
-    # We'll use a greedy dismantling check
+def dismantle_full_graph(G):
+    """
+    Greedy dismantling adapted for heterogeneous graph.
+    Outputs: dismantling order and gene-specific removal ranks.
+    """
     dismantling_order = []
     H = G.copy()
+    removal_rank = {}
+    removal_step = 0
 
     while H.nodes:
         found = False
@@ -165,103 +169,57 @@ def is_cop_win_graph(G):
                     continue
                 if neighbors.issubset(set(H.neighbors(other)).union({other})):
                     dismantling_order.append(node)
+                    if G.nodes[node].get("type") == "gene":
+                        removal_rank[node] = removal_step
+                        removal_step += 1
                     H.remove_node(node)
                     found = True
                     break
             if found:
                 break
         if not found:
-            return False, []
-    return True, dismantling_order[::-1]  # reverse gives from last removed to first
+            break  # Can't continue dismantling
 
-def extract_gene_subgraph(G):
-    # Consider only gene nodes and PPI edges
-    gene_nodes = [n for n, d in G.nodes(data=True) if d['type'] == 'gene']
-    return G.subgraph(gene_nodes).copy()
+    return dismantling_order, removal_rank
 
-def extract_copwin_core(G, verbose=False):
-    import random
-    import time
-    from tqdm import tqdm
-    
-    H = G.copy()
-    removed_nodes = []
-    all_nodes = list(H.nodes())
-    random.shuffle(all_nodes)
-    
-    if verbose:
-        print(f"Initial graph has {len(H)} nodes")
-    
-    start_time = time.time()
+def compute_gene_scores(G, removal_rank, variants_df, merged):
+    """
+    Combine dismantling order, methylation anti-correlation, and MAF to score genes.
+    """
+    scores = {}
+    max_rank = max(removal_rank.values()) if removal_rank else 1
 
-    pbar = tqdm(total=len(H), desc="Pruning nodes", ncols=80)
-    while True:
-        progress = False
-        for node in all_nodes:
-            if node not in H:
-                continue
+    # Preprocess variant and methylation by gene
+    variant_score = variants_df.groupby("gene")["weight"].sum()
+    methyl_score = merged.groupby("gene")["anti_corr_score"].sum()
 
-            H_candidate = H.copy()
-            H_candidate.remove_node(node)
-
-            is_copwin, _ = is_cop_win_graph(H_candidate)
-            if is_copwin:
-                removed_nodes.append(node)
-                H.remove_node(node)
-                progress = True
-                if verbose:
-                    pbar.update(1)
-                break  # restart loop after removing a node
-
-        if not progress:
-            break
-
-    pbar.close()
-    is_copwin_final, dismantling_order = is_cop_win_graph(H)
-
-    print(f"\nFinal Cop-Win graph has {len(H)} nodes after removing {len(removed_nodes)}")
-    print(f"Time taken: {time.time() - start_time:.2f}s")
-
-    # Build annotation dataframe
-    node_data = []
     for node in G.nodes:
-        in_copwin = node in H
-        rank = None
-        if in_copwin and dismantling_order:
-            rank = dismantling_order[::-1].index(node) + 1  # higher = more resilient
+        if G.nodes[node].get("type") != "gene":
+            continue
 
-        node_data.append({
-            "gene": node,
-            "in_copwin": in_copwin,
-            "dismantling_rank": rank
-        })
+        rank_score = round(1 - (removal_rank.get(node, max_rank) / max_rank), 4)  # 1 = removed early
+        var_score = round(variant_score.get(node, 0), 4)  # Higher if more rare variants
+        meth_score = round(methyl_score.get(node, 0), 4)  # Higher if strongly anticorrelated
 
-    df_annotations = pd.DataFrame(node_data)
-    return H, removed_nodes, dismantling_order, df_annotations
+        # Normalize variant and methylation scores
+        var_norm = np.log1p(var_score) / 10  # dampen
+        meth_norm = meth_score / 10
 
+        total = rank_score + var_norm + meth_norm
+        scores[node] = {
+            "dismantling_rank": rank_score,
+            "variant_score": var_norm,
+            "methylation_score": meth_norm,
+            "total_score": total
+        }
 
-G_genes = extract_gene_subgraph(G)
+    return scores
 
-is_copwin, dismantle_order = is_cop_win_graph(G_genes)
-if is_copwin:
-    print("Cop-Win graph confirmed.")
-    print("Dismantling order (most critical genes last):")
-    for gene in dismantle_order:
-        print(gene)
-else:
-    print("Graph is not Cop-Win. Consider extracting a Cop-Win subgraph or pruning.")
+dismantling_order, removal_rank = dismantle_full_graph(G)
+gene_scores = compute_gene_scores(G, removal_rank, variants_df, merged)
 
-G_copwin, removed_genes, dismantling_order, annotations = extract_copwin_core(G_genes)
+# Top genes by total score
+top_genes = sorted(gene_scores.items(), key=lambda x: -x[1]['total_score'])
+for gene, scores in top_genes[:10]:
+    print(f"{gene}: {scores} \n")
 
-# View top-ranked resilient genes
-top_genes = annotations[annotations['in_copwin']].sort_values("dismantling_rank")
-print(top_genes.head(10))
-
-is_copwin, dismantle_order = is_cop_win_graph(G_copwin)
-if is_copwin:
-    print("Cop-Win graph confirmed.")
-    print("Dismantling order (most critical genes last):")
-    for gene in dismantle_order:
-        print(gene)
-else:
-    print("Graph is not Cop-Win. Consider extracting a Cop-Win subgraph or pruning.")
