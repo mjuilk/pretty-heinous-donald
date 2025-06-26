@@ -106,45 +106,49 @@ def get_string_interactions(gene_list, species=9606, required_score=400):
 
 # Network construction
 
-def build_multiomic_graph(variants_df, meth_expr_df, ppi_dict):
-    G = nx.Graph()
+for _, row in variants_df.iterrows():
+    variant_id = f"{row['rsid']}_{row['chr']}:{row['pos']}"
+    gene = row['gene']
+    
+    # variant node
+    G.add_node(variant_id, type="variant", consequence = row['csq'])
+    
+    # gene node
+    G.add_node(gene, type="gene")
+    
+    # Add variant-gene edge
+    G.add_edge(variant_id, gene, relationship="variant_in_gene", weight = row['weight'])
+    
+for _, row in merged.iterrows():
+    meth_id = f"cg_{row['Chromosome']}:{row['Start']}"
+    gene = row['gene']
+    
+    # meth node
+    G.add_node(meth_id, type="methylation", beta = row['beta'])
+    
+    # gene node
+    G.add_node(gene, type="gene")
+    
+    # meth-gene edge
+    G.add_edge(meth_id, gene, relationship="methylation_repression", weight=row['anti_corr_score'])
 
-    # === Add Gene Nodes ===
-    genes = set(variants_df['gene']).union(ppi_dict.keys())
-    for gene in genes:
-        G.add_node(gene, type='gene')
+genes_in_graph = [n for n in G.nodes if G.nodes[n].get('type') == 'gene']
+ppi_dict = get_string_interactions(genes_in_graph)
 
-    # === Add Variant Nodes & Connect to Genes ===
-    for _, row in variants_df.iterrows():
-        variant_node = f"var:{row['chr']}:{row['pos']}:{row['ref']}>{row['alt']}"
-        G.add_node(variant_node, type='variant', consequence=row['consequence'], maf=row['maf'])
-        G.add_edge(variant_node, row['gene'], relation='variant_to_gene')
+for gene, partners in ppi_dict.items():
+    for partner, score in partners:
+        # Ensure both gene nodes are added with correct type
+        for g in [gene, partner]:
+            if g not in G:
+                G.add_node(g, type="gene")
+            elif G.nodes[g].get("type") is None:
+                G.nodes[g]["type"] = "gene"
 
-    # === Add Methylation Nodes & Connect to Genes ===
-    for idx, row in meth_expr_df.iterrows():
-        meth_node = f"meth:{row['chr']}:{row['Start']}-{row['End']}"
-        G.add_node(meth_node, type='methylation', anticorrelation=row['anti_corr_score'])
-        closest_gene = find_closest_gene(row, variants_df)  # function below
-        if closest_gene:
-            G.add_edge(meth_node, closest_gene, relation='meth_to_gene', weight=abs(row['anticorrelation']))
+        if G.has_edge(gene, partner):
+            G[gene][partner]['score'] = max(G[gene][partner].get('score', 0), score)
+        else:
+            G.add_edge(gene, partner, score=score)
 
-    # === Add PPI Edges Between Genes ===
-    for gene, partners in ppi_dict.items():
-        for partner in partners:
-            if gene in G and partner in G:
-                G.add_edge(gene, partner, relation='ppi', weight=1)
-
-    return G
-
-def find_closest_gene(meth_row, variants_df):
-    # Optional: improve with gene TSS positions
-    chrom_genes = variants_df[variants_df['chr'] == meth_row['chr']]
-    if chrom_genes.empty:
-        return None
-    gene_dists = chrom_genes.copy()
-    gene_dists['dist'] = abs(gene_dists['pos'] - meth_row['start'])
-    closest = gene_dists.sort_values('dist').iloc[0]
-    return closest['gene']
 
 def is_cop_win_graph(G):
     # A graph is Cop-Win iff it is dismantlable
@@ -175,3 +179,89 @@ def extract_gene_subgraph(G):
     gene_nodes = [n for n, d in G.nodes(data=True) if d['type'] == 'gene']
     return G.subgraph(gene_nodes).copy()
 
+def extract_copwin_core(G, verbose=False):
+    import random
+    import time
+    from tqdm import tqdm
+    
+    H = G.copy()
+    removed_nodes = []
+    all_nodes = list(H.nodes())
+    random.shuffle(all_nodes)
+    
+    if verbose:
+        print(f"Initial graph has {len(H)} nodes")
+    
+    start_time = time.time()
+
+    pbar = tqdm(total=len(H), desc="Pruning nodes", ncols=80)
+    while True:
+        progress = False
+        for node in all_nodes:
+            if node not in H:
+                continue
+
+            H_candidate = H.copy()
+            H_candidate.remove_node(node)
+
+            is_copwin, _ = is_cop_win_graph(H_candidate)
+            if is_copwin:
+                removed_nodes.append(node)
+                H.remove_node(node)
+                progress = True
+                if verbose:
+                    pbar.update(1)
+                break  # restart loop after removing a node
+
+        if not progress:
+            break
+
+    pbar.close()
+    is_copwin_final, dismantling_order = is_cop_win_graph(H)
+
+    print(f"\nFinal Cop-Win graph has {len(H)} nodes after removing {len(removed_nodes)}")
+    print(f"Time taken: {time.time() - start_time:.2f}s")
+
+    # Build annotation dataframe
+    node_data = []
+    for node in G.nodes:
+        in_copwin = node in H
+        rank = None
+        if in_copwin and dismantling_order:
+            rank = dismantling_order[::-1].index(node) + 1  # higher = more resilient
+
+        node_data.append({
+            "gene": node,
+            "in_copwin": in_copwin,
+            "dismantling_rank": rank
+        })
+
+    df_annotations = pd.DataFrame(node_data)
+    return H, removed_nodes, dismantling_order, df_annotations
+
+
+G_genes = extract_gene_subgraph(G)
+
+is_copwin, dismantle_order = is_cop_win_graph(G_genes)
+if is_copwin:
+    print("Cop-Win graph confirmed.")
+    print("Dismantling order (most critical genes last):")
+    for gene in dismantle_order:
+        print(gene)
+else:
+    print("Graph is not Cop-Win. Consider extracting a Cop-Win subgraph or pruning.")
+
+G_copwin, removed_genes, dismantling_order, annotations = extract_copwin_core(G_genes)
+
+# View top-ranked resilient genes
+top_genes = annotations[annotations['in_copwin']].sort_values("dismantling_rank")
+print(top_genes.head(10))
+
+is_copwin, dismantle_order = is_cop_win_graph(G_copwin)
+if is_copwin:
+    print("Cop-Win graph confirmed.")
+    print("Dismantling order (most critical genes last):")
+    for gene in dismantle_order:
+        print(gene)
+else:
+    print("Graph is not Cop-Win. Consider extracting a Cop-Win subgraph or pruning.")
