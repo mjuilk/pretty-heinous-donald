@@ -31,17 +31,11 @@ variants_df = variants_df.iloc[1:]
 variants_df['maf'] = pd.to_numeric(variants_df['maf'], errors='coerce')
 epsilon = 1e-6
 variants_df['inv_maf'] = 1 / (variants_df['maf'] + epsilon)
-
-# Min-max normalization to [0, 1] range
 min_val = variants_df['inv_maf'].min()
 max_val = variants_df['inv_maf'].max()
 variants_df['weight'] = (variants_df['inv_maf'] - min_val) / (max_val - min_val)
-
-# Clean up
 variants_df.drop(columns=['inv_maf'], inplace=True)
-##########CHANGE THIS SO THAT LOWER MAF MEANS HIGHER WEIGHT!!!!!#############
 variants_df = variants_df[~variants_df.alt.str.contains(",")] # Filter multiallelic rows
-
 
 ## TSS
 
@@ -61,7 +55,6 @@ expression_df = pd.read_csv("~/Documents/data/karenina/expression.tsv", sep="\t"
 
 expression_df["norm_expr"] = (expression_df["expr"] - expression_df["expr"].min()) / \
                                   (expression_df["expr"].max() - expression_df["expr"].min())
-
 
 # Calculate anti-correlation and repression
 
@@ -172,7 +165,7 @@ def get_graph_methyl_score(G, gene):
     for neighbor in G.neighbors(gene):
         if G.nodes[neighbor].get("type") == "methylation":
             edge_data = G[gene][neighbor]
-            score += edge_data.get("weight", 0)
+            score += edge_data.get("repr_score", 0)
     return score
 
 def get_graph_variant_score(G, gene):
@@ -185,10 +178,6 @@ def get_graph_variant_score(G, gene):
 
 
 def dismantle_full_graph(G):
-    """
-    Greedy dismantling adapted for heterogeneous graph.
-    Outputs: dismantling order and gene-specific removal ranks.
-    """
     dismantling_order = []
     H = G.copy()
     removal_rank = {}
@@ -212,7 +201,7 @@ def dismantle_full_graph(G):
             if found:
                 break
         if not found:
-            break  # Can't continue dismantling
+            break  
 
     return dismantling_order, removal_rank
 
