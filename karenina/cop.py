@@ -53,7 +53,7 @@ expression_df["norm_expr"] = (expression_df["expr"] - expression_df["expr"].min(
                                   (expression_df["expr"].max() - expression_df["expr"].min())
 
 
-# Calculate anti-correlation
+# Calculate anti-correlation and repression
 
 mod_df['Start'] = mod_df['pos'].astype(int)
 mod_df['End'] = mod_df['Start'] + 1  # 1bp interval
@@ -71,6 +71,8 @@ expression_df.index = expression_df.index.astype(str)
 expression_df = expression_df.set_index('gene')
 merged = overlap.merge(expression_df[['norm_expr']], left_on='gene', right_index=True, how='left')
 merged['anti_corr_score'] = -4 * (merged['norm_expr'] - 0.5) * (merged['beta'] - 0.5)
+merged['beta'] = pd.to_numeric(merged['beta']) / 100
+merged['norm_expr'] = pd.to_numeric(merged['norm_expr']) * 10
 
 # Pull PPI
 
@@ -124,6 +126,11 @@ for _, row in merged.iterrows():
     meth_id = f"cg_{row['Chromosome']}:{row['Start']}"
     gene = row['gene']
     
+    if row['beta'] > 0.6 and row['norm_expr'] < 0.4:
+        row['repr_score'] = (row['beta'] - 0.5) * (0.5 - row['norm_expr']) * 4  # emphasis on repression
+    else:
+        row['repr_score'] = 0
+    
     # meth node
     G.add_node(meth_id, type="methylation", beta = row['beta'])
     
@@ -131,7 +138,7 @@ for _, row in merged.iterrows():
     G.add_node(gene, type="gene")
     
     # meth-gene edge
-    G.add_edge(meth_id, gene, relationship="methylation_repression", weight=row['anti_corr_score'])
+    G.add_edge(meth_id, gene, relationship="methylation_repression", weight=row['repr_score'])
 
 genes_in_graph = [n for n in G.nodes if G.nodes[n].get('type') == 'gene']
 ppi_dict = get_string_interactions(genes_in_graph)
