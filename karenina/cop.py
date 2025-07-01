@@ -150,6 +150,23 @@ for gene, partners in ppi_dict.items():
         else:
             G.add_edge(gene, partner, score=score)
 
+def get_graph_methyl_score(G, gene):
+    score = 0
+    for neighbor in G.neighbors(gene):
+        if G.nodes[neighbor].get("type") == "methylation":
+            edge_data = G[gene][neighbor]
+            score += edge_data.get("weight", 0)
+    return score
+
+def get_graph_variant_score(G, gene):
+    score = 0
+    for neighbor in G.neighbors(gene):
+        if G.nodes[neighbor].get("type") == "variant":
+            edge_data = G[gene][neighbor]
+            score += edge_data.get("weight", 0)
+    return score
+
+
 def dismantle_full_graph(G):
     """
     Greedy dismantling adapted for heterogeneous graph.
@@ -182,30 +199,25 @@ def dismantle_full_graph(G):
 
     return dismantling_order, removal_rank
 
-def compute_gene_scores(G, removal_rank, variants_df, merged):
-    """
-    Combine dismantling order, methylation anti-correlation, and MAF to score genes.
-    """
+def compute_gene_scores_graph(G, removal_rank):
     scores = {}
     max_rank = max(removal_rank.values()) if removal_rank else 1
-
-    # Preprocess variant and methylation by gene
-    variant_score = variants_df.groupby("gene")["weight"].sum()
-    methyl_score = merged.groupby("gene")["anti_corr_score"].sum()
 
     for node in G.nodes:
         if G.nodes[node].get("type") != "gene":
             continue
 
-        rank_score = round(1 - (removal_rank.get(node, max_rank) / max_rank), 4)  # 1 = removed early
-        var_score = round(variant_score.get(node, 0), 4)  # Higher if more rare variants
-        meth_score = round(methyl_score.get(node, 0), 4)  # Higher if strongly anticorrelated
+        rank_score = 1 - (removal_rank.get(node, max_rank) / max_rank)
 
-        # Normalize variant and methylation scores
-        var_norm = np.log1p(var_score) / 10  # dampen
+        var_score = get_graph_variant_score(G, node)
+        meth_score = get_graph_methyl_score(G, node)
+
+        # Normalize
+        var_norm = np.log1p(var_score) / 10
         meth_norm = meth_score / 10
 
         total = rank_score + var_norm + meth_norm
+
         scores[node] = {
             "dismantling_rank": rank_score,
             "variant_score": var_norm,
@@ -216,10 +228,10 @@ def compute_gene_scores(G, removal_rank, variants_df, merged):
     return scores
 
 dismantling_order, removal_rank = dismantle_full_graph(G)
-gene_scores = compute_gene_scores(G, removal_rank, variants_df, merged)
+gene_scores = compute_gene_scores_graph(G, removal_rank)
 
 # Top genes by total score
 top_genes = sorted(gene_scores.items(), key=lambda x: -x[1]['total_score'])
-for gene, scores in top_genes[:10]:
+for gene, scores in top_genes[:20]:
     print(f"{gene}: {scores} \n")
 
