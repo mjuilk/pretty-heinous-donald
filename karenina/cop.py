@@ -30,8 +30,15 @@ variants_df = pd.read_csv("~/Documents/data/karenina/afm_cancer.tsv", sep="\t",
 variants_df = variants_df.iloc[1:]
 variants_df['maf'] = pd.to_numeric(variants_df['maf'], errors='coerce')
 epsilon = 1e-6
-variants_df['weight'] = 1 / (variants_df['maf'] + epsilon)
-variants_df['weight'] = pd.to_numeric(variants_df['maf']) * 1000  # Scale for visibility
+variants_df['inv_maf'] = 1 / (variants_df['maf'] + epsilon)
+
+# Min-max normalization to [0, 1] range
+min_val = variants_df['inv_maf'].min()
+max_val = variants_df['inv_maf'].max()
+variants_df['weight'] = (variants_df['inv_maf'] - min_val) / (max_val - min_val)
+
+# Clean up
+variants_df.drop(columns=['inv_maf'], inplace=True)
 ##########CHANGE THIS SO THAT LOWER MAF MEANS HIGHER WEIGHT!!!!!#############
 variants_df = variants_df[~variants_df.alt.str.contains(",")] # Filter multiallelic rows
 
