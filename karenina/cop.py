@@ -28,6 +28,9 @@ G = nx.Graph()
 variants_df = pd.read_csv("~/Documents/data/karenina/afm_cancer.tsv", sep="\t",
                           names = ['chr', 'pos', 'ref', 'alt', 'gene', 'csq', 'rsid', 'maf'])
 variants_df = variants_df.iloc[1:]
+variants_df['maf'] = pd.to_numeric(variants_df['maf'], errors='coerce')
+epsilon = 1e-6
+variants_df['weight'] = 1 / (variants_df['maf'] + epsilon)
 variants_df['weight'] = pd.to_numeric(variants_df['maf']) * 1000  # Scale for visibility
 ##########CHANGE THIS SO THAT LOWER MAF MEANS HIGHER WEIGHT!!!!!#############
 variants_df = variants_df[~variants_df.alt.str.contains(",")] # Filter multiallelic rows
