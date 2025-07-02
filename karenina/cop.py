@@ -16,6 +16,7 @@ import requests
 import time
 import networkx as nx
 import numpy as np
+from collections import defaultdict
 
 # Initialise graph
 
@@ -76,6 +77,27 @@ merged = overlap.merge(expression_df[['norm_expr']], left_on='gene', right_index
 merged['anti_corr_score'] = -4 * (merged['norm_expr'] - 0.5) * (merged['beta'] - 0.5)
 merged['beta'] = pd.to_numeric(merged['beta']) / 100
 merged['norm_expr'] = pd.to_numeric(merged['norm_expr']) * 10
+
+gene_meth_score = defaultdict(float)
+
+for _, row in merged.iterrows():
+    gene = row['gene']
+    beta = row['beta']
+    expr = row['norm_expr']
+    anti_corr = row['anti_corr_score']
+
+    # Repressed gene: methylated and low expression
+    if beta > 0.6 and expr < 0.4 and anti_corr > 0.3:
+        gene_meth_score[gene] += anti_corr
+        
+    # Active gene: low methylation and high expression
+    elif beta < 0.2 and expr > 0.6:
+        gene_meth_score[gene] += 0.1  # small reward for expected open state
+
+# Normalize methylation score
+max_m = max(gene_meth_score.values()) or 1
+for gene in gene_meth_score:
+    gene_meth_score[gene] /= max_m
 
 # Pull PPI
 
@@ -221,8 +243,10 @@ def compute_gene_scores_graph(G, removal_rank):
         # Normalize
         var_norm = np.log1p(var_score) / 10
         meth_norm = meth_score / 10
-
-        total = rank_score + var_norm + meth_norm
+        alpha = 0.5
+        delta = 0.2
+        gamma = 0.3
+        total = alpha * rank_score + delta * var_norm + gamma * meth_norm
 
         scores[node] = {
             "dismantling_rank": rank_score,
