@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=128G
+#SBATCH --time=1-0
+#SBATCH --output=rnaseq.%j.out
+#SBATCH --error=rnaseq.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.com
+
+cd ~
+TMPDIR=/tmp
+export TMPDIR
+
+nextflow run nf-core/rnaseq \
+	--input data/rer/sample.csv \
+	--outdir rnaseq/ \
+	--fasta refs/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
+	--gtf refs/Homo_sapiens.GRCh38.113.gtf.gz \
+	--igenomes_ignore \
+	--genome null \
+	-profile singularity
