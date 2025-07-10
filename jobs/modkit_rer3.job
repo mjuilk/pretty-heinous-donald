@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=1-0
+#SBATCH --output=modkit.%j.out
+#SBATCH --error=modkit.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.com
+
+modkit pileup X.bam \
+	results/modkit/X.bed \
+	--log-filepath results/modkit/pileup.log
