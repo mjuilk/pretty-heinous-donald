@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=256G
+#SBATCH --time=3-0
+#SBATCH --output=canu_ass.%j.out
+#SBATCH --error=canu_ass.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.com
+
+canu -trimmed -corrected -nanopore ~/results/X.trimmedReads.fasta.gz -p \
+	-d ~/results/canu \
+	genomeSize=3g \
+	maxThreads=64 useGrid=false

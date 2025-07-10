@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=512G
+#SBATCH --time=3-0
+#SBATCH --output=flye_test.%j.out
+#SBATCH --error=flye_test.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@XX.com
+
+python ext/Flye/bin/flye --nano-raw scripts/X_fastq_pass.fastq \
+	--out-dir results/X/flye --threads 64
