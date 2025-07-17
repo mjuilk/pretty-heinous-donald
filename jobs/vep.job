@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=64G
+#SBATCH --time=1-0
+#SBATCH --output=vep.%j.out
+#SBATCH --error=vep.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+singularity exec ~/ext/vep.sif vep --dir ~/ext/vep_data \
+    --assembly GRCh38 --cache --compress_output bgzip \
+    --everything --filter_common --fork 6 --format vcf --vcf \
+    -i X.vcf.gz --offline -o X.ann.vcf.gz \
+    --per_gene --species homo_sapiens \
+    --stats_file X_VEP.ann.summary.html --total_length

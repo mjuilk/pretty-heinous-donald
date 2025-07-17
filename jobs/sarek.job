@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=1-0
+#SBATCH --output=sarek.%j.out
+#SBATCH --error=sarek.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+TMPDIR=/tmp
+export TMPDIR
+
+nextflow run nf-core/sarek -r 3.5.0 \
+	--input samsarek.csv \
+	--outdir sarek \
+    --save_output_as_bam \
+	--step mapping \
+	--genome GATK.GRCh38 \
+	--nucleotides_per_second 250000 \
+	--tools deepvariant,haplotypecaller,manta,cnvkit,merge \
+	-profile singularity 
+
+nextflow clean -f 
