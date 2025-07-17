@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256G
+#SBATCH --time=3-0
+#SBATCH --output=medaka_X.%j.out
+#SBATCH --error=medaka_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+medaka_consensus -i X.fastq \
+	-d X.fasta \
+	-o medaka \
+	-m r1041_e82_400bps_hac_v4.3.0

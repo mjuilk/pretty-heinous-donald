@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256G
+#SBATCH --time=3-0
+#SBATCH --output=shasta_X.%j.out
+#SBATCH --error=shasta_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+shasta --input X.fastq \
+	--config Nanopore-R10-Fast-Nov2022

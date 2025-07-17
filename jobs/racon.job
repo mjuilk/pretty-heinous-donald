@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256G
+#SBATCH --time=1-0
+#SBATCH --output=racon_X.%j.out
+#SBATCH --error=racon_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=jong.chan.lim@uol.de
+
+~/ext/racon/build/bin/racon -m 8 -x -6 -g -8 -w 500 X.fastq minimap2/aligned.sam medaka/consensus.fasta > racon/racon_polished.fasta
+

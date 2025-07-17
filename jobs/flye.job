@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256G
+#SBATCH --time=3-0
+#SBATCH --output=flye_X_LR.%j.out
+#SBATCH --error=flye_X_LR.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+flye --nano-raw X.fastq \
+	--out-dir flye --threads 32
