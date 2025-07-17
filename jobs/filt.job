@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=64G
+#SBATCH --time=1-0
+#SBATCH --output=filt.%j.out
+#SBATCH --error=filt.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+samtools view -L ~/refs/fa.bed -o filtered.bam input.bam
+samtools index filtered.bam
+
