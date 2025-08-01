@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=1-0
+#SBATCH --output=conv_rr17.%j.out
+#SBATCH --error=conv_rr17.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=jong.chan.lim@uol.de
+
+ml SAMtools
+
+SAMPLE="rr17"
+
+cd $WORK/reread/bam/sr
+
+samtools view -T ~/refs/GATK/GRCh38/Homo_sapiens_assembly38.fasta -b -o ${SAMPLE}/${SAMPLE}.bam ${SAMPLE}/${SAMPLE}.recal.cram
+samtools sort ${SAMPLE}/${SAMPLE}.bam -o ${SAMPLE}/${SAMPLE}.sorted.bam
+rm ${SAMPLE}/${SAMPLE}.bam
+samtools index ${SAMPLE}/${SAMPLE}.sorted.bam

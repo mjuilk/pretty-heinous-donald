@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=32G
+#SBATCH --time=1-0
+#SBATCH --output=sort.%j.out
+#SBATCH --error=sort.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+cd $WORK
+
+samtools sort -o X.sorted.bam X.bam
+samtools index X.sorted.bam
+samtools depth -a X.sorted.bam | awk '{sum+=$3} END { print "Average coverage = ",sum/NR }'
+

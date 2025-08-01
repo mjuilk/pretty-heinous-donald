@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=16G
+#SBATCH --time=1-0
+#SBATCH --output=sort_RRs.%j.out
+#SBATCH --error=sort_RRs.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+ml SAMtools
+dirs=("1" "2") 
+
+ref="$HOME/refs/GATK/GRCh38/Homo_sapiens_assembly38.fasta"
+
+for dir in "${dirs[@]}"; do
+    out_bam="${dir}/merged.sorted.bam"
+    samtools sort -o "$out_bam" "$dir/*.bam"
+    samtools index "$out_bam"
+done

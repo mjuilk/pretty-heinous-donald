@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=1-0
+#SBATCH --output=merge_X.%j.out
+#SBATCH --error=merge_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+ ml SAMtools
+ cd $WORK/X
+ samtools merge -o X_m.bam X*.bam
+ samtools sort -o X_ms.bam X_m.bam
+ samtools index X_ms.bam
