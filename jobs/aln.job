@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=3-0
+#SBATCH --output=aln.%j.out
+#SBATCH --error=aln.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+cd $WORK
+
+minimap2 -ax map-ont X.fna.gz \
+    X.fastq.gz > X.bam
