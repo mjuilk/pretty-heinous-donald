@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=1-0
+#SBATCH --output=epi_X.%j.out
+#SBATCH --error=epi_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=jong.chan.lim@uol.de
+
+cd ~
+TMPDIR=/tmp
+export TMPDIR
+nextflow run epi2me-labs/wf-human-variation  \
+	--bam 'X.bam' \
+	--ref 'GRCh38_no_alt_analysis_set.fna.gz' \
+	--override_basecaller_cfg 'dna_r10.4.1_e8.2_400bps_hac@v5.0.0' \
+	--out_dir 'X/epi' \
+	--sample_name 'X' \
+	--snp \
+	--sv \
+	--cnv --str \
+	--mod \
+    --phased --sex XX \
+	-profile singularity
+
+nextflow clean -f
