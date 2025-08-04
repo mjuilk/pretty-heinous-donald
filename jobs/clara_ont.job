@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --ntasks=1
+#SBATCH --partition mpcg.p
+#SBATCH --gpus-per-node 1
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=1-0
+#SBATCH --output=pb_X.%j.out
+#SBATCH --error=pb_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=jong.chan.lim@uol.de
+
+input=/fq
+ref=/GATK/GRCh38
+outputdir=/X
+
+singularity exec --nv -B /dss/work:/dss/work ~/ext/clara/parabricks-4.5.1-1.sif pbrun fq2bam \
+--ref $ref/Homo_sapiens_assembly38.fasta \
+--in-fq $input/X/X_3_R1_001.fastq.gz $input/X/X_3_R2_001.fastq.gz \
+--out-bam $outputdir/output.bam
