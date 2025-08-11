@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=1-0
+#SBATCH --output=merge_RRsr.%j.out
+#SBATCH --error=merge_RRsr.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=jong.chan.lim@uol.de
+#SBATCH --partition=rosa.p
+#SBATCH --array=0-4
+
+ml SAMtools
+cd $WORK/reread/bam/sr
+
+dirs=("X" "Y")
+
+dir="${dirs[$SLURM_ARRAY_TASK_ID]}"
+
+echo "Processing directory: $dir"
+
+samtools merge -@ $SLURM_CPUS_PER_TASK -o "$dir"/"$dir"_m.bam "$dir"/rr*L*.bam
+samtools sort -@ $SLURM_CPUS_PER_TASK -o "$dir"/"$dir"_ms.bam "$dir"/"$dir"_m.bam
+samtools index "$dir"/"$dir"_ms.bam
+
+echo "Completed processing: $dir"
