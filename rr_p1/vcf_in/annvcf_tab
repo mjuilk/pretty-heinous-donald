@@ -27,7 +27,7 @@ for arg in "$@"; do
         -l) flag_l=true ;;
         -h) flag_h=true ;;
         -x) flag_x=true ;;
-        -*) echo "Invalid option: $arg" >&2; exit 1 ;;
+        -*) echo "Invalid option: $arg \n Options are either -l, -h, or -x" >&2; exit 1 ;;
         *)
             if [[ -z "$input_vcf" ]]; then
                 input_vcf="$arg"
