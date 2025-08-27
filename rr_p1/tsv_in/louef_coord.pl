@@ -10,8 +10,8 @@ Bio::EnsEMBL::Registry->load_registry_from_db(
 );
 
 # Open the input and output files
-open(my $in,  "<", "gnomad.v4.1.constraint_metrics.tsv") or die "Cannot open input file: $!";
-open(my $out, ">", "gnomad.v4.1.constraint_metrics_with_coordinates.tsv") or die "Cannot open output file: $!";
+open(my $in,  "<", "/Users/jon/Documents/mats/rsrcs/gnomad.v4.1.constraint_metrics.tsv") or die "Cannot open input file: $!";
+open(my $out, ">", "/Users/jon/Documents/mats/rsrcs/gnomad.v4.1.constraint_metrics_with_coordinates.tsv") or die "Cannot open output file: $!";
 
 # Print the header line from the input file to the output file
 my $header = <$in>;
