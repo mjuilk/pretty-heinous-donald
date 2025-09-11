@@ -1,0 +1,49 @@
+#! /bin/bash
+
+ ###########################################
+#         WORKS FOR ANNOTATED VCF'S         #
+# 1. takes annotated VCF as input           #
+# 2. makes specific queries into tab cols   #
+ ###########################################
+
+ml BCFtools
+ml Java/21
+
+#!/bin/bash
+
+gnomad_path="/dss/work/doad5844/gnomad/gnomad.genomes.v4.1.sites."
+annotated="gnomad_ann.vcf"
+
+cp $1 temp
+
+for i in {1..22};
+    do
+        echo "Chromosome ${i}"
+        java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annotate -info AF,AF_nfe,popmax,AF_popmax ${gnomad_path}chr${i}.vcf.bgz temp > temp1
+
+        if [ ! -s temp1 ]; then
+            echo "Error: temp1 is empty after annotating chromosome ${i}"
+            exit 1
+        fi
+
+        mv temp1 temp
+    done
+
+echo "Chromosome X"
+java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annotate -info AF,AF_nfe,popmax,AF_popmax ${gnomad_path}chrX.vcf.bgz temp > temp1
+mv temp1 temp
+
+echo "Chromosome Y"
+java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annotate -info AF,AF_nfe,popmax,AF_popmax ${gnomad_path}chrY.vcf.bgz temp > temp1
+mv temp1 temp
+
+mv temp $annotated
+
+java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annmem    -dbfile ~/ext/snpEff/clinvar_20250521.vcf.gz \
+    -fields CLNSIG $annotated | grep "CLNSIG=Pa" > clvp.ann.vcf
+
+bcftools view -h $annotated | cat - clvp.ann.vcf > temp && mv temp clvp.ann.vcf
+
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%INFO/CSQ]\t[%INFO/AF]\n' $annotated | awk -F'\t' '{split($5, csq, "|"); print $1, $2, $3, $4, csq[4], csq[2], $6}' OFS='\t' > tab
+
+#echo -e "CHROM\tPOS\tREF\tALT\tGENE\tCONSEQUENCE\tRSID" | cat - cancer_vars.tsv > temp && mv temp cancer_vars.tsv
