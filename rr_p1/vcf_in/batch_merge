@@ -1,0 +1,42 @@
+#! /bin/bash
+
+ ###########################################
+#    MERGING VCFS FROM SAME SAMPLE(GATK)    #
+# simple script performing following steps  #
+# 1. take dirs as args                      #
+# 2. create temp naming file for reheader   #
+# 3. match sample names with bcftools       #
+# 4. index renamed files                    #
+# 5. use bcftools concat to merge files     #
+ ###########################################
+
+ml BCFtools
+
+for dir in "$@"; do
+    tar_dir="${dir}/sarek/annotation/manta"
+    cd "$tar_dir" || { echo "Dir not found: $tar_dir"; exit 1; }
+    laufs=(LAUF*/)
+
+    echo "Runs found: "${laufs[@]}" in "$dir""
+    
+    if [[ ${#laufs[@]} -eq 0 ]]; then
+        echo "No LAUf dirs found in $tar_dir; prob single run then"
+        continue
+    fi
+
+    echo "${dir}" > rename.txt
+    renameds=()
+    
+    for lauf in "${laufs[@]}"; do
+        name="${lauf%/}"
+        renamed_vcf="${name}.renamed.vcf.gz"
+        bcftools reheader -s rename.txt -o "$renamed_vcf" "${lauf}${name}".*.vcf.gz
+        bcftools index "$renamed_vcf"
+        renameds+=("$renamed_vcf")
+    done
+
+    rm rename.txt
+    out="merged.vcf.gz"
+    bcftools concat -a -Oz -o "$out" "${renameds[@]}"
+    cd /fs/dss/groups/agmedgen/KOL_UOL/projects/REREAD/wf_results
+done
