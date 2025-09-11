@@ -1,0 +1,30 @@
+#! /bin/bash
+
+ ###########################################
+#         WORKS FOR ANNOTATED VCF'S         #
+# 1. takes annotated VCF as input           #
+# 2. makes specific queries into tab cols   #
+ ###########################################
+
+ml BCFtools
+ml Java/21
+
+#!/bin/bash
+
+# Default flags
+input_vcf=""
+
+# Validate input
+if [[ -z "$input_vcf" ]]; then
+    echo "Usage: $0 input.vcf.gz" >&2
+    exit 1
+fi
+
+#java -Xmx16G -jar ~/ext/snpEff/SnpSift.jar annmem    -dbfile ~/ext/snpEff/clinvar_20250521.vcf.gz \
+#    -fields CLNSIG       lq.vcf.gz    | grep "CLNSIG=Pa" > clvp.ann.vcf
+
+#bcftools view -h $vcf_fn | cat - clvp.ann.vcf > temp && mv temp clvp.ann.vcf
+
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%INFO/CSQ]\n' $0 | awk -F'\t' '{split($5, csq, "|"); print $1, $2, $3, $4, csq[4], csq[2], csq[18]}' OFS='\t' > variants.tsv
+
+#echo -e "CHROM\tPOS\tREF\tALT\tGENE\tCONSEQUENCE\tRSID" | cat - cancer_vars.tsv > temp && mv temp cancer_vars.tsv
