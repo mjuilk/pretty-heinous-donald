@@ -1,0 +1,29 @@
+#! /bin/bash
+
+ ################################################
+#  Workflow from sarek output to annovar output  #
+# 1. only keep variants in cancer genes          #
+# 2. perform QC using qc_filt script (high)      #
+# 3. takes vcf input and generates avinput       #
+# 4. annotates using databases in db_path        #
+ ################################################
+
+ml BCFtools
+
+#!/bin/bash
+
+db_path="/dss/work/doad5844/ext/annovar/humandb/"
+echo "db_path"
+
+#Filter by cancer genes
+echo "filtering by cancer genes"
+bcftools filter -R ~/cangenLG.bed -o cg_filt.vcf.gz $1
+
+#QC
+echo "QC (Mode : High)"
+qc_filt -h cg_filt.vcf.gz
+
+#Annovar
+table_annovar.pl hq.vcf.gz $db_path -buildver hg38 -out sample -remove -protocol refGene -operation g -nastring . -vcfinput
+
+table_annovar.pl sample.avinput $db_path -buildver hg38 -out anno -remove -protocol refGeneWithVer,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f -nastring . -otherinfo -polish
