@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
  ################################################
 #  Workflow from sarek output to annovar output  #
@@ -10,10 +10,12 @@
 
 ml BCFtools
 
-#!/bin/bash
-
 db_path="/dss/work/doad5844/ext/annovar/humandb/"
 echo "db_path"
+
+#Indexing
+echo "indexing input"
+bcftools index $1
 
 #Filter by cancer genes
 echo "filtering by cancer genes"
@@ -26,4 +28,4 @@ qc_filt -h cg_filt.vcf.gz
 #Annovar
 table_annovar.pl hq.vcf.gz $db_path -buildver hg38 -out sample -remove -protocol refGene -operation g -nastring . -vcfinput
 
-table_annovar.pl sample.avinput $db_path -buildver hg38 -out anno -remove -protocol refGeneWithVer,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f -nastring . -otherinfo -polish
+table_annovar.pl sample.avinput $db_path -buildver hg38 -out anno -remove -protocol refGeneWithVer,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
