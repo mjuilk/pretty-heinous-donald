@@ -1,0 +1,24 @@
+#! /bin/bash
+
+ ###########################################
+#    RENAMING CSVS FROM SAME SAMPLE(DEEP)   #
+# simple script performing following steps  #
+# 1. take dirs as args                      #
+# 2. rename/copy annovar output csvs        #
+ ###########################################
+
+for dir in "$@"; do
+    echo "Sample: "${dir}""
+    cd ${dir}
+    
+    cp deep/pure.anno.hg38_multianno.csv ${dir}_pude.csv
+    cp deep/hq.anno.hg38_multianno.csv ${dir}_hqde.csv
+    
+    cp hap/pure.anno.hg38_multianno.csv ${dir}_puha.csv
+    cp hap/hq.anno.hg38_multianno.csv ${dir}_hqha.csv
+    
+    cp sen/pure.anno.hg38_multianno.csv ${dir}_puse.csv
+    cp sen/hq.anno.hg38_multianno.csv ${dir}_hqse.csv
+
+    cd ..
+done
