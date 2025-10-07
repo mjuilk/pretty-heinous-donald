@@ -40,8 +40,11 @@ def merger_sub(data, sam, mode):
 
 #Filtering benign and likely benign before writing to csv
         intervar_filt = dedup[~((dedup['InterVar_automated'] == ".") | (dedup['InterVar_automated'] == "Benign") | (dedup['InterVar_automated'] == "Likely benign"))]
-        clnsg_filt = multifilt = dedup[((dedup['CLNSIG'] == "Uncertain_significance") | (dedup['CLNSIG'] == "Pathogenic") | (dedup['CLNSIG'] == "other"))]
-        cat_filt = pd.concat([intervar_filt, clnsg_filt]).drop_duplicates(["Chr", "Start", "Ref", "Alt"])
+        clnsig_filt = multifilt = dedup[((dedup['CLNSIG'] == "Uncertain_significance") | (dedup['CLNSIG'] == "Pathogenic") | (dedup['CLNSIG'] == "other"))]
+        print("Filtering variants based on InterVar and CLNSIG non-benigns")
+        cat_filt = pd.concat([intervar_filt, clnsig_filt]).drop_duplicates(["Chr", "Start", "Ref", "Alt"])
+
+        print(f"[INTERVAR/CLNSIG]\tNumber of variants : {cat_filt.shape[0]}\n")
 
 #Write output
         print("Writing output with semicolons as delimiter...")
@@ -49,7 +52,7 @@ def merger_sub(data, sam, mode):
             out = sam + "_pume.csv"
         elif mode == "hq":
             out = sam + "_hqme.csv"
-        cat_filt.to_csv(out, sep = ';')
+        cat_filt.to_csv(out, sep = ';', index = False)
     else:
         print("NOT A VALID MODE")
         pass
@@ -94,5 +97,5 @@ samples = [f"rr{i}" for i in range(1,22)]
 
 for sam in samples:
     os.chdir("/user/doad5844/results/reread_p1")
-    print(sam)
+    print("\n===================================\n" sam + "\n===================================\n")
     merger(sam)
