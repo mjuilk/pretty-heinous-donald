@@ -26,6 +26,10 @@ echo "QC (Mode : High)"
 qc_filt -h cg_filt.vcf.gz
 
 #Annovar
-table_annovar.pl hq.vcf.gz $db_path -buildver hg38 -out sample -remove -protocol refGene -operation g -nastring . -vcfinput
+table_annovar.pl hq.vcf.gz $db_path -buildver hg38 -out hq -remove -protocol refGene -operation g -nastring . -vcfinput
 
-table_annovar.pl sample.avinput $db_path -buildver hg38 -out anno -remove -protocol refGeneWithVer,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
+table_annovar.pl hq.avinput $db_path -buildver hg38 -out hq.anno -remove -protocol refGeneWithVer,gnomad41_genome,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
+
+table_annovar.pl cg_filt.vcf.gz $db_path -buildver hg38 -out pure -remove -protocol refGene -operation g -nastring . -vcfinput
+
+table_annovar.pl pure.avinput $db_path -buildver hg38 -out pure.anno -remove -protocol refGeneWithVer,gnomad41_genome,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
