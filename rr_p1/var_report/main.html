@@ -3,12 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Page</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>RECALL Variant Report</title>
+    <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
 <body>
-    <title id="title">RECALL Variant Report</title>
+    <div>
+        <h1 class="poppins-xxxlarge" style="display: inline;">RECALL Variant (C2) Report</h1>
+        <img src="institute_logo.png" alt="Institute Logo" style="display: inline; vertical-align: middle; height: 100px; float: right;">
+    </div>
+    <div>
+        <div id="summary">
+            <h2 class="poppins-semibold-italic">Summary</h2>
+            <p>Sentieon Variants: <span id="sen-variants">0</span></p>
+            <p>DeepVariant Variants: <span id="deep-variants">18641</span></p>
+            <p>HaplotypeCaller Variants: <span id="hap-variants">17990</span></p>
 
+        </div>
+        <div id="variant-table">
+            <h2 class="poppins-semibold-italic">Variant Details</h2>
+            <table class="poppins-extralight">
+                <thead>
+                    <tr>
+                        <th class="poppins-extralight">Gene</th>
+                        <th class="poppins-extralight">Variant</th>
+                        <th class="poppins-extralight">Type</th>
+                        <th class="poppins-extralight">Consequence</th>
+                    </tr>
+                    <tr>
+                        <th class="poppins-extralight">ClinVar : </th>
+                        <th class="poppins-extralight">InterVar : </th>
+                    </tr>
+                    <tr>
+                        <th class="poppins-extralight">gnomAD AF :</th>
+                        <th class="poppins-extralight">SpliceAI : /</th>
+                        <th class="poppins-extralight">CADD : </th>
+                        <th class="poppins-extralight">REVEL : </th>
+                    </tr>
+                </thead>
+                <tbody id="variant-rows">
+                    <tr>
+                        <th></th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
