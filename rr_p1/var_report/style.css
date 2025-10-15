@@ -6,12 +6,13 @@ body {
     margin-right: 10%;
     margin-top: 5%;
     margin-bottom: 20%;
+    background-color: #FFFFF1;
 
 }
 
-.poppins-xxxlarge {
+.poppins-xxlarge {
     font-family: 'Poppins', sans-serif;
-    font-size: xxx-large;
+    font-size: xx-large;
 }
 
 .poppins-semibold-italic {
@@ -28,6 +29,7 @@ body {
 
 
 table {
+    margin-bottom: 20px;
     font-family: 'Poppins', sans-serif;
     border: 1px solid;
     border-collapse: collapse;
