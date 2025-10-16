@@ -28,6 +28,11 @@ body {
     font-style: normal;
 }
 
+.foot {
+    font-family: 'Poppins', sans-serif;
+    font-size: x-small;
+    font-style: italic;
+}
 
 table {
     margin-bottom: 20px;
@@ -38,3 +43,9 @@ table {
     width: 100%;
     background-color:white
 }
+
+/* Rounded border */
+hr.rounded {
+    border-top: 8px solid #bbb;
+    border-radius: 5px;
+  }
