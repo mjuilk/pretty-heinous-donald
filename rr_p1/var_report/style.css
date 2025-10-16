@@ -5,7 +5,6 @@ body {
     margin-left: 10%;
     margin-right: 10%;
     margin-top: 5%;
-    margin-bottom: 20%;
     background: linear-gradient(135deg, #FFFFF1, #F7F7E8);
     background-blend-mode: soft-light;
     box-shadow: inset 0 0 50px rgba(255, 255, 255, 0.5);
@@ -48,4 +47,18 @@ table {
 hr.rounded {
     border-top: 8px solid #bbb;
     border-radius: 5px;
-  }
+}
+
+#types {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 equal-width columns */
+    gap: 10px; /* Adds spacing between items */
+    align-items: start; /* Aligns items to the top */
+}
+
+#types p {
+    margin: 0; /* Removes default paragraph margins */
+    padding: 5px; /* Optional: Adds some padding */
+    border: 1px solid #eee; /* Optional: For visual clarity */
+    border-radius: 4px; /* Optional: Rounded corners */
+}
