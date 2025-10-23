@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=128G
+#SBATCH --time=3-0
+#SBATCH --output=rare_X.%j.out
+#SBATCH --error=rare_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+module load hpc-env/13.1
+
+TMPDIR=/tmp
+export TMPDIR
+
+nextflow run nf-core/raredisease -r 2.6.0 \
+	--input sht/rare.csv \
+	--outdir rare \
+    --genome GRCh38 \
+    --fasta /user/X/refs/GRCh38.primary_assembly.genome.fa \
+    --intervals_wgs /user/X/.nextflow/assets/nf-core/raredisease/assets/chr1-chr22chrXchrYchrM_grch38.interval_list \
+    --intervals_y /user/X/.nextflow/assets/nf-core/raredisease/assets/chrY_grch38.interval_list \
+	-profile singularity 
+
+nextflow clean -f 
