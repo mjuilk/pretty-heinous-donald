@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=64G
+#SBATCH --time=1-0
+#SBATCH --output=annotsv_X.%j.out
+#SBATCH --error=annotsv_X.%j.err
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=XXXXX@X.de
+
+ml Miniforge3
+
+conda activate variants
+
+ext/AnnotSV/bin/AnnotSV -SVinputFile 'delly/X.vcf.gz' -candidateGenesFile ~/scripts/vcf_in/cangenLG.txt -candidateGenesFiltering 1  > AnnotSV.log
