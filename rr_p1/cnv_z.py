@@ -1,18 +1,30 @@
-import numpy as np
+#!/usr/bin/env python
+
 import pandas as pd
+import argparse
 
-# Read the TSV file
-df = pd.read_csv('/Users/jon/Documents/data/rer/out/c4/test.bed', sep='\t',  dtype={'coverage': float})
+def main():
+    parser = argparse.ArgumentParser(description="Calculate z-scores for coverage data and filter by threshold.")
+    parser.add_argument("input_file", help="Path to the input BED file")
+    parser.add_argument("threshold", type=float, help="Threshold for filtering z-scores (e.g., -4)")
+    args = parser.parse_args()
 
-# Calculate z-scores for the 'coverage' column
-mean = df['coverage'].mean()
-stddev = df['coverage'].std()
-df['zscore'] = (df['coverage'] - mean) / stddev
-thresh = -4
+    # Read the TSV file
+    df = pd.read_csv(args.input_file, sep='\t', dtype={'coverage': float})
 
-# Filter rows where zscore <= thresh
-filtered_df = df[df['zscore'] <= thresh]
+    # Calculate z-scores for the 'coverage' column
+    mean = df['coverage'].mean()
+    stddev = df['coverage'].std()
+    df['zscore'] = (df['coverage'] - mean) / stddev
 
-# Save the result to a new TSV file
-df.to_csv('/Users/jon/Documents/data/rer/out/c4/c4_z.bed', sep='\t', index=False, header=True)
-filtered_df.to_csv('/Users/jon/Documents/data/rer/out/c4/c4_z4.bed', sep='\t', index=False, header=True)
+    # Filter rows where zscore <= threshold
+    filtered_df = df[df['zscore'] <= args.threshold]
+
+    # Save the full DataFrame with z-scores
+    df.to_csv(f"{args.input_file.rsplit('.', 1)[0]}_z.bed", sep='\t', index=False, header=True)
+
+    # Save the filtered DataFrame, incorporating the threshold into the filename
+    filtered_df.to_csv(f"{args.input_file.rsplit('.', 1)[0]}_z{abs(args.threshold)}.bed", sep='\t', index=False, header=True)
+
+if __name__ == "__main__":
+    main()
