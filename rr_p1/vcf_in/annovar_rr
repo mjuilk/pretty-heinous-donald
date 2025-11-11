@@ -38,7 +38,7 @@ done
 #define annovar db path
 
 db_path="/dss/work/doad5844/ext/annovar/humandb/"
-echo "db_path"
+echo "$db_path"
 
 #Indexing
 echo "indexing input"
