@@ -10,25 +10,67 @@
 
 ml BCFtools
 
+#getopts for handling arguments fluidly
+
+vcf=""
+mode=""
+
+while getopts "hi:m:" optionName; do
+    case "$optionName" in
+        i)
+            vcf="$OPTARG"
+            if [[ ! "$vcf" =~ \.vcf$ && ! "$vcf" =~ \.vcf\.gz$ ]]; then
+                echo "Error: Input VCF file must end with '.vcf' or '.vcf.gz'" >&2
+                exit 1
+            fi
+            ;;
+        m)
+            mode="$OPTARG"
+            if [[ ! "$mode" =~ ^[lhx]$ ]]; then
+                echo "Error: Mode must be one of 'l', 'h', or 'x'" >&2
+                exit 1
+            fi
+            ;;
+        [?]) printErrorHelpAndExit "$badOptionHelp";;
+    esac
+done
+
+#define annovar db path
+
 db_path="/dss/work/doad5844/ext/annovar/humandb/"
 echo "db_path"
 
 #Indexing
 echo "indexing input"
-bcftools index $1
+bcftools index $vcf
 
 #Filter by cancer genes
 echo "filtering by cancer genes"
-bcftools filter -R ~/cangenLG.bed -o cg_filt.vcf.gz $1
+bcftools filter -R ~/cg_v2.bed -o cg_filt.vcf.gz $vcf
 
 #QC
-echo "QC (Mode : High)"
-qc_filt -h cg_filt.vcf.gz
+
+if [[ "$mode" == "l" ]]; then
+    echo "QC (Mode : Low)"
+    qc_filt -l cg_filt.vcf.gz
+    filtered="lq.vcf.gz"
+    name="lq"
+elif [[ "$mode" == "h" ]]; then
+    echo "QC (Mode : High)"
+    qc_filt -h cg_filt.vcf.gz
+    filtered="hq.vcf.gz"
+    name="hq"
+else
+    echo "QC (Mode : Extra)"
+    qc_filt -x cg_filt.vcf.gz
+    filtered="xq.vcf.gz"
+    name="xq"
+fi
 
 #Annovar
-table_annovar.pl hq.vcf.gz $db_path -buildver hg38 -out hq -remove -protocol refGene -operation g -nastring . -vcfinput
+table_annovar.pl $filtered $db_path -buildver hg38 -out $name -remove -protocol refGene -operation g -nastring . -vcfinput
 
-table_annovar.pl hq.avinput $db_path -buildver hg38 -out hq.anno -remove -protocol refGeneWithVer,gnomad41_genome,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
+table_annovar.pl "$name".avinput $db_path -buildver hg38 -out hq.anno -remove -protocol refGeneWithVer,gnomad41_genome,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
 
 table_annovar.pl cg_filt.vcf.gz $db_path -buildver hg38 -out pure -remove -protocol refGene -operation g -nastring . -vcfinput
 
