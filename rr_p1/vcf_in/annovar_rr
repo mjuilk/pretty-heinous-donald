@@ -35,8 +35,12 @@ while getopts "hi:m:" optionName; do
     esac
 done
 
-#define annovar db path
+if [[ -z "$vcf" || -z "$mode" ]]; then
+    echo "Error: Both -i (input VCF file) and -m (mode) flags are required." >&2
+    exit 1
+fi
 
+#Define annovar db path
 db_path="/dss/work/doad5844/ext/annovar/humandb/"
 echo "$db_path"
 
