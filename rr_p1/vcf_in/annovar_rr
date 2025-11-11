@@ -26,8 +26,8 @@ while getopts "hi:m:" optionName; do
             ;;
         m)
             mode="$OPTARG"
-            if [[ ! "$mode" =~ ^[lhx]$ ]]; then
-                echo "Error: Mode must be one of 'l', 'h', or 'x'" >&2
+            if [[ ! "$mode" =~ ^[lhxs]$ ]]; then
+                echo "Error: Mode must be one of 'l' (low qual), 'h' (high qual), 'x' (xtra high qual), or 's' (structural vars)" >&2
                 exit 1
             fi
             ;;
@@ -53,22 +53,26 @@ bcftools filter -R ~/cg_v2.bed -o cg_filt.vcf.gz $vcf
 if [[ "$mode" == "l" ]]; then
     echo "QC (Mode : Low)"
     qc_filt -l cg_filt.vcf.gz
-    filtered="lq.vcf.gz"
+    annovar_in="lq.vcf.gz"
     name="lq"
 elif [[ "$mode" == "h" ]]; then
     echo "QC (Mode : High)"
     qc_filt -h cg_filt.vcf.gz
-    filtered="hq.vcf.gz"
+    annovar_in="hq.vcf.gz"
     name="hq"
-else
+elif [[ "$mode" == "x" ]]; then
     echo "QC (Mode : Extra)"
     qc_filt -x cg_filt.vcf.gz
-    filtered="xq.vcf.gz"
+    annovar_in="xq.vcf.gz"
     name="xq"
+else
+    echo "Structural variant (Manta)"
+    annovar_in="cg_filt.vcf.gz"
+    name="sv"
 fi
 
 #Annovar
-table_annovar.pl $filtered $db_path -buildver hg38 -out $name -remove -protocol refGene -operation g -nastring . -vcfinput
+table_annovar.pl $annovar_in $db_path -buildver hg38 -out $name -remove -protocol refGene -operation g -nastring . -vcfinput
 
 table_annovar.pl "$name".avinput $db_path -buildver hg38 -out hq.anno -remove -protocol refGeneWithVer,gnomad41_genome,dbnsfp42c,mcap,revel,icgc28,logofunc,intervar_20250721,clinvar_20250721 -operation g,f,f,f,f,f,f,f,f -nastring . -otherinfo -csvout -polish
 
